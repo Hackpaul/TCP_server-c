@@ -1,10 +1,19 @@
-//1.bind 
-//2.listen
-//3.accept
-//4.send
-//5.recv
-//6.close 
-
+/*
+-----------------------------------------------------------------------------------------------
+MAIN :
+ $ fd creation
+ $ bind to local port
+ $ listen
+-----------------------------------------------------------------------------------------------
+POLL :
+ 1.server FD
+     $ accept
+ 2.client FDs
+     $ Handle POLLIN,POLLHUP,POLLERR.
+           if POLLIN --> recieve and send reply 
+           if POLLHUP & POLLERR --> close all fds and shutdown the server
+-----------------------------------------------------------------------------------------------
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,26 +41,26 @@ int main() {
     char buffer[1024];
     char reply[1024];
    
-    // 1. Create TCP Internet Socket
+    // Creation of FD -- server fd
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sfd == -1) {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    // 2. Clear structure and fill details (INADDR_ANY binds to all network cards)
+    // Clear structure and fill details (INADDR_ANY --  all network cards)
     memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_port = htons(PORT);
-    server_addr.sin_addr.s_addr = INADDR_ANY; 
+    server_addr.sin_addr.s_addr = INADDR_ANY;
 
-    //setting the flag for reusing 
+    //Setting the flag for reusing server f
      if(setsockopt(sfd,SOL_SOCKET,SO_REUSEADDR,&opt,sizeof(opt)) == -1){
      perror("setsockopt failed");
      exit(EXIT_FAILURE);
      }
 
-    // 3. Bind the socket to the port
+    // Bind the socket to the port
     if (bind(sfd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
         perror("Bind failed");
         exit(EXIT_FAILURE);
@@ -61,15 +70,21 @@ int main() {
     listen(sfd,BACKLOG);
     }
 
-
+    // setting the other fds to -1in poll struct
     for(i=1;i<MAX_CLIENTS;i++){
     fds[i].fd = -1;
     }
 
+/*------------------------
+         POLL starts
+ -------------------------
+*/
+
+
     while(1){
     
     
-    activity=poll(fds,MAX_CLIENTS,-1);
+    activity=poll(fds,MAX_CLIENTS,-1);  // Passing fds struct 
 
     if(activity<0){
     perror("Poll error");
