@@ -181,7 +181,9 @@ int main() {
     }// for broadcast & unicast by clients
     
     }else{
-    printf("server: fd %d disconnected",i); 
+    printf("server: fd %d disconnected",i);
+    close_fd(fds[i].fd);
+    fds[i].fd=-1; 
     }// check for client dissconnection
  
     }else if((fds[i].revents & POLLHUP) || (fds[i].revents & POLLERR)){
