@@ -137,7 +137,8 @@ int main() {
                         fds[i].events=POLLIN;
                         printf("server :: <FD=%d> created \n",i);
                         memset(brodcast_message_for_new_client,0,sizeof(brodcast_message_for_new_client));
-                        snprintf(brodcast_message_for_new_client,sizeof(brodcast_message_for_new_client),"Info : Client <%d> connected",i);             broadcast(brodcast_message_for_new_client,strlen(brodcast_message_for_new_client),fds);
+                        snprintf(brodcast_message_for_new_client,sizeof(brodcast_message_for_new_client),"Info : Client <%d> connected",i);
+                        broadcast(brodcast_message_for_new_client,strlen(brodcast_message_for_new_client),fds);
                         broadcast("\n",1,fds);
                         snprintf(client_tag,sizeof(client_tag),"<%d> : ",i);
                         broadcast(client_tag,strlen(client_tag),fds);
