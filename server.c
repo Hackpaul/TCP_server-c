@@ -28,13 +28,13 @@ POLL :
 #define BACKLOG 5
 #define MAX_CLIENTS 10
 #define CLIENT_FD_STARTER 1
-
+#define BUFFER_SIZE 1024
 
 
 struct parser_array {
 
 int slot;
-char msg[100];
+char msg[BUFFER_SIZE -4];
 
 };
 
@@ -43,16 +43,15 @@ void close_fd(int fd){
     }
 
 
-void parser(char *buffer,int buffer_size,struct parser_array *pass){
-  char *id=strtok(buffer," ");
-  if(id !=NULL){
-  pass->slot=atoi(id);
-  }
-  char *msg=strtok(NULL," ");
-  if(msg!=NULL){
-  strcpy(pass->msg,msg);
-  }
-  }
+void parser(char *buffer,struct parser_array *pass){
+    int slot;
+    char temp_buffer[BUFFER_SIZE-4];
+    int parser_value=sscanf(buffer,"%d %1019[^\n]",&slot,temp_buffer);
+    if(parser_value==2){
+    pass->slot=slot;
+    snprintf(pass->msg,sizeof(pass->msg),"%s\n",temp_buffer);
+    }
+    }
 
 
 void broadcast(char *buffer,int size,struct pollfd *fds_no){
@@ -74,9 +73,9 @@ int main() {
     struct pollfd fds[MAX_CLIENTS];
     struct parser_array client_array;
     socklen_t client_len = sizeof(client_addr);
-    char buffer[1024];
-    char reply[1024];
-    char broadcast_message[1024] , brodcast_message_for_new_client[40];
+    char buffer[1024]={0};
+    char reply[1024]={0};
+    char broadcast_message[1024]={0} , brodcast_message_for_new_client[40];
     // Creation of FD -- server fd
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sfd == -1) {
@@ -133,64 +132,65 @@ int main() {
     perror("Accept failed");
     exit(EXIT_FAILURE);
     }else{
-    printf(" Accepted and fd created! \n");
+    printf("server : Accepted and fd created! \n");
     }
 
     for(i=1;i<MAX_CLIENTS;i++){
     if(fds[i].fd == -1){
     fds[i].fd=cfd;
     fds[i].events=POLLIN;
-    printf("FD = %d created \n",i);
-
+    printf("server :FD = %d created \n",i);
+    memset(brodcast_message_for_new_client,0,sizeof(brodcast_message_for_new_client));
     snprintf(brodcast_message_for_new_client,sizeof(brodcast_message_for_new_client),"brodcast -- Clieant connected no : %d",i);
-    broadcast(brodcast_message_for_new_client,sizeof(brodcast_message_for_new_client),fds);
+    broadcast(brodcast_message_for_new_client,strlen(brodcast_message_for_new_client),fds);
+    broadcast("\n",1,fds);
 
+    printf("server : brodcast sended : %s with size of %d\n",brodcast_message_for_new_client,strlen(brodcast_message_for_new_client));
     break;
     }
     }
     }//sfd function
 
-    for(i=1;i<MAX_CLIENTS;i++){
+    for(i=CLIENT_FD_STARTER;i<MAX_CLIENTS;i++){
     if(fds[i].fd == -1){ 
     continue;
     }else if(fds[i].revents & POLLIN){
-     memset(buffer, 0, sizeof(buffer)); // clear the bucket
-    recv(fds[i].fd, buffer, sizeof(buffer) - 1, 0);
+    memset(buffer, 0, sizeof(buffer)); // clear the bucket
+   int byte_recv= recv(fds[i].fd, buffer,sizeof(buffer) - 1, 0);
+
+    if(byte_recv>0){
     printf("%d--Peer sent: %s\n",i, buffer);
-    buffer[strcspn(buffer, "\n")] = '\0';
 
-
-    parser(buffer,sizeof(buffer),&client_array);
+   // buffer[strcspn(buffer, "\n")] = '\0';
+    
+    memset(&client_array,0,sizeof(client_array));
+    
+    parser(buffer,&client_array);
     if(client_array.slot==0){
+    memset(broadcast_message,0,sizeof(broadcast_message));
     strcpy(broadcast_message,client_array.msg);
-    broadcast(broadcast_message,sizeof(broadcast_message),fds);
+    broadcast(broadcast_message,strlen(broadcast_message),fds);
+    broadcast("\n",1,fds);
+    
     }else if(client_array.slot<MAX_CLIENTS && client_array.slot>=CLIENT_FD_STARTER){
-    send(fds[client_array.slot].fd,client_array.msg,sizeof(client_array.msg), 0);
-    }else{fprintf(stderr,"invalid fd is given\n");}
-
-
-    fgets(reply,sizeof(reply),stdin);
-    if(!strcmp(reply,"exit\n")){
-    printf("Closing...\n");
-    for(j=0;j<MAX_CLIENTS;j++){
-    if(fds[j].fd > -1){
-    close_fd(fds[j].fd);
-
-    }
-    } // fd closing loop for EXIT reply 
-
-    printf("Successfully closed\n");
-    exit(EXIT_SUCCESS);
-    }// EXIT string check  
-     send(fds[i].fd, reply, strlen(reply), 0); // POLLIN handling
+    send(fds[client_array.slot].fd,client_array.msg,strlen(client_array.msg), 0);
+    send(fds[client_array.slot].fd,"\n",1, 0);
+    
+    }else{
+    fprintf(stderr,"invalid fd is given\n");
+    }// for broadcast & unicast by clients
+    
+    }else{
+    printf("server: fd %d disconnected",i); 
+    }// check for client dissconnection
+ 
     }else if((fds[i].revents & POLLHUP) || (fds[i].revents & POLLERR)){
     close_fd(fds[i].fd);
     fds[i].fd=-1;
-    printf("FD %d Closed sucesfully \n",i);
+    printf("server : FD %d Closed sucesfully \n",i);
     }// PULLUP & POLLERR handling
 
     }//cfd function
-
     }//while loop
     return 0;
     }
