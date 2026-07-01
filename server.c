@@ -116,8 +116,10 @@ int main() {
             if (cfd == -1) {
                 perror("Server :: Accept failed !! \n");
             } else {
+                int flag = 1;
                 for(i = CLIENT_FD_STARTER; i < MAX_CLIENTS; i++){
                     if(fds[i].fd == -1){
+                        flag=0;
                         fds[i].fd = cfd;
                         fds[i].events = POLLIN;
                         printf("server :: <FD=%d> created \n", i);
@@ -130,6 +132,11 @@ int main() {
                         printf("server :: <Broadcast> : %s\n", brodcast_message_for_new_client);
                         break;
                     }
+                }
+                if(flag){
+                    send(cfd,"Sorry : Can't connect : MAX clients reached !\n",50,0);
+                    close(cfd);
+                    printf("server :: MAX Clients reached !\nNew client closed\n");
                 }
             }
         } // sfd function
