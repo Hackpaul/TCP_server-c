@@ -51,7 +51,7 @@ void broadcast_client_tag(struct pollfd *fds_no){
     for(i = CLIENT_FD_STARTER; i < MAX_CLIENTS; i++){
         if(fds_no[i].fd != -1){
             memset(client_tag, 0, sizeof(client_tag));
-            snprintf(client_tag, sizeof(client_tag), "@%d : ", i);
+            snprintf(client_tag, sizeof(client_tag), "@%d ", i);
             send(fds_no[i].fd, client_tag, strlen(client_tag), 0);
         }
     }
@@ -66,7 +66,7 @@ int main() {
     struct parser_array client_array;
     socklen_t client_len = sizeof(client_addr);
     char buffer[1024] = {0}, reply[1024] = {0}, broadcast_message[1024] = {0};
-    char brodcast_message_for_new_client[40], client_tag[10], send_to_tag[10], reciever_tag[10];
+    char brodcast_message_for_new_client[40], client_tag[10], send_to_tag[10], reciever_tag[10] , recieve_to_tag[10];
     
     // Creation of FD -- server fd
     sfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -102,7 +102,7 @@ int main() {
         fds[i].fd = -1;
     }
 
-    printf("Server initialized smoothly. Listening on port %d...\n", PORT);
+    printf("server :: Server initialized smoothly. Listening on port %d...\n", PORT);
 
     while(1){
         activity = poll(fds, MAX_CLIENTS, -1); // Passing fds struct 
@@ -124,8 +124,6 @@ int main() {
 
                         memset(brodcast_message_for_new_client, 0, sizeof(brodcast_message_for_new_client));
                         snprintf(brodcast_message_for_new_client, sizeof(brodcast_message_for_new_client), "Info : Client <%d> connected", i);
-
-                        broadcast_client_tag(fds);
                         broadcast(brodcast_message_for_new_client, strlen(brodcast_message_for_new_client), fds);
                         broadcast("\n", 1, fds);
                         broadcast_client_tag(fds);
@@ -149,22 +147,26 @@ int main() {
                     memset(send_to_tag, 0, sizeof(send_to_tag));
                     memset(client_tag, 0, sizeof(client_tag));
                     memset(reciever_tag, 0, sizeof(reciever_tag));
+                    memset(recieve_to_tag, 0, sizeof(recieve_to_tag));
 
                     snprintf(send_to_tag, sizeof(send_to_tag), "<%d> ", client_array.slot);
-                    snprintf(client_tag, sizeof(client_tag), "@%d : ", i);
+                    snprintf(recieve_to_tag, sizeof(recieve_to_tag), "<%d> ",i);
+                    snprintf(client_tag, sizeof(client_tag), "@%d : ",i);
                     snprintf(reciever_tag, sizeof(reciever_tag), "@%d : ", client_array.slot);
 
                     if(client_array.slot == 0){
-                        broadcast(send_to_tag, strlen(send_to_tag), fds);
+                        send(fds[i].fd,client_tag, strlen(client_tag),0);
+                        broadcast(recieve_to_tag, strlen(recieve_to_tag), fds);
+                        broadcast(" <broadcast> ",14,fds);
                         broadcast(client_array.msg, strlen(client_array.msg), fds);
                         broadcast("\n", 1, fds); 
                         broadcast_client_tag(fds);
                         printf("Client :: <Broadcast> : %s\n", client_array.msg);
                     } else if(client_array.slot < MAX_CLIENTS && client_array.slot >= CLIENT_FD_STARTER){
-                        send(fds[client_array.slot].fd, send_to_tag, strlen(send_to_tag), 0);
+                        send(fds[client_array.slot].fd, recieve_to_tag, strlen(recieve_to_tag), 0);
                         send(fds[client_array.slot].fd, client_array.msg, strlen(client_array.msg), 0);
                         send(fds[client_array.slot].fd, "\n", 1, 0);
-                        send(fds[i].fd, reciever_tag, strlen(reciever_tag), 0);
+                        send(fds[client_array.slot].fd, reciever_tag, strlen(reciever_tag), 0);
                         send(fds[i].fd, client_tag, strlen(client_tag), 0);
                         printf("Client :: <%d> --> <%d> : %s\n", i, client_array.slot, client_array.msg);
                     } else {
