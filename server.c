@@ -59,13 +59,13 @@ void broadcast_client_tag(struct pollfd *fds_no){
 
 int main() {
     int sfd, cfd;
-    int opt = 1, nfds = 1;
-    int i, j, activity;
+    int opt = 1;
+    int i , activity;
     struct sockaddr_in server_addr, client_addr;
     struct pollfd fds[MAX_CLIENTS];
     struct parser_array client_array;
     socklen_t client_len = sizeof(client_addr);
-    char buffer[1024] = {0}, reply[1024] = {0}, broadcast_message[1024] = {0};
+    char buffer[1024] = {0};
     char brodcast_message_for_new_client[40], client_tag[10], send_to_tag[10], reciever_tag[10] , recieve_to_tag[10];
     
     // Creation of FD -- server fd
