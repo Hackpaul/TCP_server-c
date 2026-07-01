@@ -124,6 +124,9 @@ int main() {
                         fds[i].events = POLLIN;
                         printf("server :: <FD=%d> created \n", i);
 
+                        memset(client_tag, 0, sizeof(client_tag));
+                        snprintf(client_tag, sizeof(client_tag), "@%d ",i);
+                        send(fds[i].fd,client_tag,strlen(client_tag),0);
                         memset(brodcast_message_for_new_client, 0, sizeof(brodcast_message_for_new_client));
                         snprintf(brodcast_message_for_new_client, sizeof(brodcast_message_for_new_client), "Info : Client <%d> connected", i);
                         broadcast(brodcast_message_for_new_client, strlen(brodcast_message_for_new_client), fds);
@@ -158,8 +161,8 @@ int main() {
 
                     snprintf(send_to_tag, sizeof(send_to_tag), "<%d> ", client_array.slot);
                     snprintf(recieve_to_tag, sizeof(recieve_to_tag), "<%d> ",i);
-                    snprintf(client_tag, sizeof(client_tag), "@%d : ",i);
-                    snprintf(reciever_tag, sizeof(reciever_tag), "@%d : ", client_array.slot);
+                    snprintf(client_tag, sizeof(client_tag), "@%d ",i);
+                    snprintf(reciever_tag, sizeof(reciever_tag), "@%d ", client_array.slot);
 
                     if(client_array.slot == 0){
                         send(fds[i].fd,client_tag, strlen(client_tag),0);
