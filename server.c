@@ -10,9 +10,10 @@
 #include <poll.h>
 
 #define PORT 8080
+#define CONTROL_PLANE_PORT 9090
 #define BACKLOG 5
 #define MAX_CLIENTS 10
-#define CLIENT_FD_STARTER 1
+#define CLIENT_FD_STARTER 2
 #define BUFFER_SIZE 1024
 
 struct parser_array {
@@ -92,10 +93,21 @@ int main() {
         perror("Bind failed");
         exit(EXIT_FAILURE);
     } else {
+        // server fd initialized 
         fds[0].fd = sfd;
         fds[0].events = POLLIN;
         listen(sfd, BACKLOG);
     }
+
+    /*
+    -----------------------------------------------------
+
+                    TODO 
+         create and bind a new fd for 9090 
+
+    -----------------------------------------------------
+
+    */
 
     // setting the other fds to -1 -- for ignorance
     for(i = CLIENT_FD_STARTER; i < MAX_CLIENTS; i++){
@@ -111,14 +123,6 @@ int main() {
             perror("Poll error");
             exit(EXIT_FAILURE);
         }
-        // if(stdin stream ){
-
-
-        // code
-
-
-
-        //}stdin stream
 
         if(fds[0].revents & POLLIN){
             cfd = accept(sfd, (struct sockaddr *)&client_addr, &client_len);
@@ -202,6 +206,52 @@ int main() {
                 printf("server :: FD %d disconnected\n", i);
             }
         } // cfd function
+
+        if(fds[cf_fd].fd==-1){
+        continue ;
+        } else if(fds[cf_fd].revents & POLLIN){
+        memset(buffer, 0, sizeof(buffer)); // clear the bucket
+        int byte_recv = recv(fds[[cf_fd].fd, buffer, sizeof(buffer) - 1, 0);
+            if(byte_recv > 0){
+                memset(&client_array, 0, sizeof(client_array));
+                parser(buffer, &client_array);
+
+                memset(send_to_tag, 0, sizeof(send_to_tag));
+                memset(client_tag, 0, sizeof(client_tag));
+                memset(reciever_tag, 0, sizeof(reciever_tag));
+                memset(recieve_to_tag, 0, sizeof(recieve_to_tag));
+
+                snprintf(send_to_tag, sizeof(send_to_tag), "<%d> ", client_array.slot);
+                snprintf(recieve_to_tag, sizeof(recieve_to_tag), "<server> ");
+                snprintf(client_tag, sizeof(client_tag), "@%SP ::");
+                snprintf(reciever_tag, sizeof(reciever_tag), "@%d ", client_array.slot);
+
+                if(client_array.slot == 0){
+                    send(fds[[cf_fd].fd,client_tag, strlen(client_tag),0);
+                    broadcast(recieve_to_tag, strlen(recieve_to_tag), fds);
+                    broadcast(" <broadcast> ",14,fds);
+                    broadcast(client_array.msg, strlen(client_array.msg), fds);
+                    broadcast("\n", 1, fds);
+                    broadcast_client_tag(fds);
+                    printf("Control Plane :: <Broadcast> : %s\n", client_array.msg);
+                } else if(client_array.slot < MAX_CLIENTS && client_array.slot >= CLIENT_FD_STARTER){
+                    send(fds[client_array.slot].fd, recieve_to_tag, strlen(recieve_to_tag), 0);
+                    send(fds[client_array.slot].fd, client_array.msg, strlen(client_array.msg), 0);
+                    send(fds[client_array.slot].fd, "\n", 1, 0);
+                    send(fds[client_array.slot].fd, reciever_tag, strlen(reciever_tag), 0);
+                    send(fds[cf_fd].fd, client_tag, strlen(client_tag), 0);
+                    printf("Control Plane :: <Control Plane> --> <%d> : %s\n", client_array.slot, client_array.msg);
+                } else {
+                    printf("Control Plane :: invalid fd is given\n");
+                    }
+            } else {
+                printf("Control Plane :: backdoor disconnected\n", i);
+                close_fd(fds[[cf_fd].fd);
+                fds[[cf_fd].fd = -1;
+            }
+
+        }  //port 9090 -- server backdoor
+
     } // while loop
     return 0;
 }
