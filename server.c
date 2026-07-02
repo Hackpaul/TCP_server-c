@@ -67,7 +67,7 @@ int main() {
     socklen_t client_len = sizeof(client_addr);
     char buffer[1024] = {0};
     char brodcast_message_for_new_client[40], client_tag[10], send_to_tag[10], reciever_tag[10] , recieve_to_tag[10];
-    
+
     // Creation of FD -- server fd
     sfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sfd == -1) {
@@ -105,7 +105,7 @@ int main() {
     printf("server :: Server initialized smoothly. Listening on port %d...\n", PORT);
 
     while(1){
-        activity = poll(fds, MAX_CLIENTS, -1); // Passing fds struct 
+        activity = poll(fds, MAX_CLIENTS, -1); // Passing fds struct
 
         if(activity < 0){
             perror("Poll error");
@@ -139,13 +139,13 @@ int main() {
                 if(flag){
                     send(cfd,"Sorry : Can't connect : MAX clients reached !\n",50,0);
                     close(cfd);
-                    printf("server :: MAX Clients reached !\nNew client closed\n");
+                    printf("server :: MAX Clients reached ! :: New client closed\n");
                 }
             }
         } // sfd function
 
         for(i = CLIENT_FD_STARTER; i < MAX_CLIENTS; i++){
-            if(fds[i].fd == -1){ 
+            if(fds[i].fd == -1){
                 continue;
             } else if(fds[i].revents & POLLIN){
                 memset(buffer, 0, sizeof(buffer)); // clear the bucket
@@ -169,7 +169,7 @@ int main() {
                         broadcast(recieve_to_tag, strlen(recieve_to_tag), fds);
                         broadcast(" <broadcast> ",14,fds);
                         broadcast(client_array.msg, strlen(client_array.msg), fds);
-                        broadcast("\n", 1, fds); 
+                        broadcast("\n", 1, fds);
                         broadcast_client_tag(fds);
                         printf("Client :: <Broadcast> : %s\n", client_array.msg);
                     } else if(client_array.slot < MAX_CLIENTS && client_array.slot >= CLIENT_FD_STARTER){
@@ -180,7 +180,7 @@ int main() {
                         send(fds[i].fd, client_tag, strlen(client_tag), 0);
                         printf("Client :: <%d> --> <%d> : %s\n", i, client_array.slot, client_array.msg);
                     } else {
-                        fprintf(stderr, "invalid fd is given\n");
+                        printf("server :: invalid fd is given\n");
                     }
                 } else {
                     printf("server :: FD %d disconnected\n", i);
