@@ -98,7 +98,7 @@ int main() {
     }
 
     // setting the other fds to -1 -- for ignorance
-    for(i = 1; i < MAX_CLIENTS; i++){
+    for(i = CLIENT_FD_STARTER; i < MAX_CLIENTS; i++){
         fds[i].fd = -1;
     }
 
@@ -111,6 +111,15 @@ int main() {
             perror("Poll error");
             exit(EXIT_FAILURE);
         }
+        // if(stdin stream ){
+
+
+        // code
+
+
+
+        //}stdin stream
+
         if(fds[0].revents & POLLIN){
             cfd = accept(sfd, (struct sockaddr *)&client_addr, &client_len);
             if (cfd == -1) {
